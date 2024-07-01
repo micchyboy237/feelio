@@ -1,61 +1,62 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useNavigation, useRoute } from '@react-navigation/native'
+import React, { useContext, useEffect, useState } from 'react'
 import {
-  View,
-  Text,
-  ScrollView,
   SafeAreaView,
-  TextInput,
+  ScrollView,
   StyleSheet,
-} from "react-native";
-import useStyles from "../constants/styles";
-import EditTopBar from "../components/EditTopBar";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { getDiary, updateDiary } from "../constants/Database";
-import { DContexts } from "../contexts/DContexts";
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
+import EditTopBar from '../components/EditTopBar'
+import { getDiary, updateDiary } from '../constants/Database'
+import useStyles from '../constants/styles'
+import { DContexts } from '../contexts/DContexts'
 
 export default function Edit() {
-  const css = useStyles();
-  const route = useRoute();
-  const navigation = useNavigation();
-  const diaryid = route.params.id;
-  const [text, onChangeTitle] = React.useState("");
-  const [value, onChangeText] = React.useState("");
-  const [diary, setDiary] = useState([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [day, setDay] = useState(null);
-  const [month, setMonth] = useState(null);
-  const [year, setYear] = useState(null);
-  const { changedsomething } = useContext(DContexts);
-  const { setChangedSomething } = useContext(DContexts);
-  const { txtcolor } = useContext(DContexts);
+  const css = useStyles()
+  const route = useRoute()
+  const navigation = useNavigation()
+  const diaryid = route.params.id
+  const [text, onChangeTitle] = React.useState('')
+  const [value, onChangeText] = React.useState('')
+  const [diary, setDiary] = useState([])
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [day, setDay] = useState(null)
+  const [month, setMonth] = useState(null)
+  const [year, setYear] = useState(null)
+  const { changedsomething } = useContext(DContexts)
+  const { setChangedSomething } = useContext(DContexts)
+  const { txtcolor } = useContext(DContexts)
   useEffect(() => {
     getDiary(diaryid)
       .then((data) => {
-        onChangeTitle(data[0].title);
-        onChangeText(data[0].content);
-        setDay(data[0].day);
-        setMonth(data[0].monthname);
-        setYear(data[0].year);
-        setDiary(data);
+        console.log('getDiary data:', data)
+        onChangeTitle(data.title)
+        onChangeText(data.content)
+        setDay(data.day)
+        setMonth(data.monthname)
+        setYear(data.year)
+        setDiary(data)
       })
       .catch((error) => {
-        console.error("Failed to get diaries:", error);
-      });
-  }, []);
+        console.error('Failed to get diaries:', error)
+      })
+  }, [])
 
   const editDiary = async () => {
     try {
-      await updateDiary(diaryid, text, value);
-      console.log(value);
-      console.log("Diary Updated Successfully");
-      setChangedSomething(Math.floor(Math.random() * (5000 - 0 + 1)) + 0);
+      await updateDiary(diaryid, text, value)
+      console.log(value)
+      console.log('Diary Updated Successfully')
+      setChangedSomething(Math.floor(Math.random() * (5000 - 0 + 1)) + 0)
 
-      navigation.navigate("Diary", { id: diaryid });
+      navigation.navigate('Diary', { id: diaryid })
     } catch (error) {
-      console.error("Failed to insert Diary:", error);
+      console.error('Failed to insert Diary:', error)
     }
-  };
+  }
 
   return (
     <ScrollView style={css.container}>
@@ -89,7 +90,7 @@ export default function Edit() {
         </View>
       </SafeAreaView>
     </ScrollView>
-  );
+  )
 }
 const styles = StyleSheet.create({
   title_input: {
@@ -97,4 +98,4 @@ const styles = StyleSheet.create({
     padding: 5,
     fontSize: 17,
   },
-});
+})

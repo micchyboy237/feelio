@@ -1,30 +1,36 @@
-import * as SQLite from "expo-sqlite";
+import * as FileSystem from 'expo-file-system'
+import * as SQLite from 'expo-sqlite'
 
-// Open or create the database (db will be created if it doesn't exist)
-const db = SQLite.openDatabase("feelio.db");
+const openDatabase = async () => {
+  const db = await SQLite.openDatabaseAsync('feelio.db')
+  console.log(`Database path: ${FileSystem.documentDirectory}SQLite/feelio.db`)
+  await db.execAsync('PRAGMA journal_mode = WAL')
+  await db.execAsync('PRAGMA foreign_keys = ON')
+  return db
+}
 
-// Function to initialize the database (e.g., create tables)
-const initializeDatabase = () => {
-  db.transaction((tx) => {
-    tx.executeSql(
-      `CREATE TABLE IF NOT EXISTS diary (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT,
-                content TEXT,
-                year INTEGER,
-                month INTEGER,
-                day INTEGER,
-                hour INTEGER,
-                minute INTEGER,
-                monthname TEXT,
-                timestamp TEXT
-            );`
-    );
-  });
-};
+const initializeDatabase = async () => {
+  const db = await openDatabase()
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await txn.execAsync(`
+       CREATE TABLE IF NOT EXISTS diary (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        content TEXT,
+        year INTEGER,
+        month INTEGER,
+        day INTEGER,
+        hour INTEGER,
+        minute INTEGER,
+        monthname TEXT,
+        timestamp TEXT
+      );  
+    `)
+  })
+  return db
+}
 
-// Function to insert a diary into the database
-const insertDiary = (
+const insertDiary = async (
   title,
   content,
   year,
@@ -33,130 +39,83 @@ const insertDiary = (
   hour,
   minute,
   monthname,
-  timestamp
+  timestamp,
 ) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "INSERT INTO diary (title, content, year, month, day,hour,minute,monthname,timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [title, content, year, month, day, hour, minute, monthname, timestamp],
-        (_, results) => {
-          resolve(results);
-        },
-        (_, error) => {
-          reject(error);
-        }
-      );
-    });
-  });
-};
+  const db = await openDatabase()
+  const result = await db.runAsync(
+    'INSERT INTO diary (title, content, year, month, day, hour, minute, monthname, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    title,
+    content,
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    monthname,
+    timestamp,
+  )
+  const firstRow = await db.getFirstAsync(
+    'SELECT * FROM diary WHERE id=?',
+    result.lastInsertRowId,
+  )
+  return firstRow
+}
 
-const updateDiary = (id, title, content) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "UPDATE diary SET title=?,content=? WHERE id=?",
-        [title, content, id],
-        (_, results) => {
-          resolve(results);
-        },
-        (_, error) => {
-          reject(error);
-        }
-      );
-    });
-  });
-};
+const updateDiary = async (id, title, content) => {
+  const db = await openDatabase()
+  await db.runAsync(
+    'UPDATE diary SET title=?, content=? WHERE id=?',
+    title,
+    content,
+    id,
+  )
+  console.log('UPDATED DIARY:', {
+    title,
+    content,
+    id,
+  })
+}
 
-// Function to query all diaries from the database
-const getAllDiaries = (year, month) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "SELECT * FROM diary WHERE year=? AND monthname=? ORDER BY id DESC",
-        [year, month],
-        (_, results) => {
-          const rows = results.rows;
-          const diaries = [];
-          for (let i = 0; i < rows.length; i++) {
-            diaries.push(rows.item(i));
-          }
-          resolve(diaries);
-        },
-        (_, error) => {
-          reject(error);
-        }
-      );
-    });
-  });
-};
+const getAllDiaries = async (year, month) => {
+  const db = await openDatabase()
+  const results = []
+  const allRows = await db.getAllAsync('SELECT * FROM diary')
+  for (const row of allRows) {
+    results.push(row)
+  }
+  return results
+}
 
-//getDiary
-const getDiary = (id) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "SELECT * FROM diary WHERE id=?",
-        [id],
-        (_, results) => {
-          const rows = results.rows;
-          const diaries = [];
-          for (let i = 0; i < rows.length; i++) {
-            diaries.push(rows.item(i));
-          }
-          resolve(diaries);
-        },
-        (_, error) => {
-          reject(error);
-        }
-      );
-    });
-  });
-};
+const getDiary = async (id) => {
+  const db = await openDatabase()
+  const firstRow = await db.getFirstAsync(
+    'SELECT * FROM diary WHERE id = ?',
+    id,
+  )
+  return firstRow
+}
 
-// Function to delete a diary from the database by ID
-const deleteDiaryById = (id) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "DELETE FROM diary WHERE id = ?",
-        [id],
-        (_, results) => {
-          resolve(results);
-        },
-        (_, error) => {
-          reject(error);
-        }
-      );
-    });
-  });
-};
-const clearTable = (tableName) => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        `DELETE FROM ${tableName}`,
-        [],
-        (_, results) => {
-          // Resolve the promise when the query is successful
-          resolve(results);
-        },
-        (_, error) => {
-          // Reject the promise if an error occurs
-          reject(error);
-        }
-      );
-    });
-  });
-};
+const deleteDiaryById = async (id) => {
+  const db = await openDatabase()
+  // await db.withExclusiveTransactionAsync(async (txn) => {
+  //   await txn.execAsync('DELETE FROM diary WHERE id = ?', id)
+  // })
+  await db.runAsync('DELETE FROM diary WHERE id = $id', { $id: id })
+}
 
-// Export the functions for use in other files
+const clearTable = async (tableName) => {
+  const db = await openDatabase()
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await txn.execAsync(`DELETE FROM ${tableName}`)
+  })
+}
+
 export {
+  clearTable,
+  deleteDiaryById,
+  getAllDiaries,
+  getDiary,
   initializeDatabase,
   insertDiary,
-  getAllDiaries,
-  deleteDiaryById,
-  clearTable,
-  getDiary,
   updateDiary,
-};
+}

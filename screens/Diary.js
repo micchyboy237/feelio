@@ -1,53 +1,46 @@
-import React, { useState, useEffect, useContext } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  SafeAreaView,
-  TextInput,
-  StyleSheet,
-} from "react-native";
-import useStyles from "../constants/styles";
-import DiaryTopBar from "../components/DiaryTopBar";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { getDiary } from "../constants/Database";
-import { DContexts } from "../contexts/DContexts";
+import { useNavigation, useRoute } from '@react-navigation/native'
+import React, { useContext, useEffect, useState } from 'react'
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import DiaryTopBar from '../components/DiaryTopBar'
+import { getDiary } from '../constants/Database'
+import useStyles from '../constants/styles'
+import { DContexts } from '../contexts/DContexts'
 export default function Diary() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const diaryid = route.params.id;
-  console.log(diaryid);
-  const [diary, setDiary] = useState([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [day, setDay] = useState(null);
-  const [month, setMonth] = useState(null);
-  const [year, setYear] = useState(null);
+  const navigation = useNavigation()
+  const route = useRoute()
+  const diaryid = route.params.id
+  console.log('Diary:', diaryid)
+  const [diary, setDiary] = useState([])
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [day, setDay] = useState(null)
+  const [month, setMonth] = useState(null)
+  const [year, setYear] = useState(null)
 
-  const { changedsomething } = useContext(DContexts);
-  const { setChangedSomething } = useContext(DContexts);
+  const { changedsomething } = useContext(DContexts)
+  const { setChangedSomething } = useContext(DContexts)
 
-  css = useStyles();
+  css = useStyles()
   useEffect(() => {
     getDiary(diaryid)
       .then((data) => {
-        if (data[0]) {
-          setTitle(data[0].title);
-          setContent(data[0].content);
-          setDay(data[0].day);
-          setMonth(data[0].monthname);
-          setYear(data[0].year);
-          setDiary(data);
+        if (data) {
+          setTitle(data.title)
+          setContent(data.content)
+          setDay(data.day)
+          setMonth(data.monthname)
+          setYear(data.year)
+          setDiary(data)
         }
       })
       .catch((error) => {
-        console.error("Failed to get diaries:", error);
-      });
-  }, [changedsomething]);
+        console.error('Failed to get diaries:', error)
+      })
+  }, [changedsomething])
 
   const goToEdit = (did) => {
-    navigation.navigate("Edit", { id: did });
-  };
+    navigation.navigate('Edit', { id: did })
+  }
   return (
     <ScrollView style={css.container}>
       <SafeAreaView>
@@ -61,7 +54,7 @@ export default function Diary() {
         </View>
       </SafeAreaView>
     </ScrollView>
-  );
+  )
 }
 const styles = StyleSheet.create({
   title: {
@@ -70,7 +63,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
     padding: 5,
     fontSize: 28,
-    fontWeight: "600",
+    fontWeight: '600',
     letterSpacing: 1,
   },
   content: {
@@ -78,4 +71,4 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     margin: 5,
   },
-});
+})

@@ -47,6 +47,24 @@ class SecureStoreModel {
       return null;
     }
   }
+
+  // Log all key-value pairs
+  static async logAllItems() {
+    try {
+      const allKeysString = await SecureStore.getItemAsync('allKeys');
+      if (allKeysString) {
+        const allKeys = JSON.parse(allKeysString);
+        for (const key of allKeys) {
+          const value = await SecureStore.getItemAsync(key);
+          console.log(`Key: "${key}", Value: "${value}"`);
+        }
+      } else {
+        console.log("No keys stored.");
+      }
+    } catch (error) {
+      console.error(`Failed to log all items: ${error}`);
+    }
+  }
 }
 
 // Export the SecureStoreModel class

@@ -66,6 +66,7 @@ export default function Home() {
   useEffect(() => {
     getAllDiaries(yearfilter, monthfilter)
       .then((diary) => {
+        console.log("Diaries:", diary)
         setDiaries(diary);
       })
       .catch((error) => {
